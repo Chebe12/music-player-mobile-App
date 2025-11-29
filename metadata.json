@@ -1,0 +1,7 @@
+{
+  "name": "Music App",
+  "description": "A mobile-first, responsive music player with AI-powered playlist generation and mood matching. Features a sleek dark UI, real-time audio playback, and Gemini integration for music discovery.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
