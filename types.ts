@@ -1,3 +1,5 @@
+
+
 export interface Track {
   id: string;
   title: string;
@@ -6,6 +8,7 @@ export interface Track {
   audioUrl: string;
   duration: number; // in seconds
   genre?: string;
+  lyrics?: string;
 }
 
 export type ViewState = 'library' | 'player' | 'ai-dj';
@@ -18,6 +21,7 @@ export interface PlaybackState {
   volume: number;
   isShuffle: boolean;
   isRepeat: boolean;
+  queue: Track[];
 }
 
 export interface PlaybackControls {
@@ -29,6 +33,7 @@ export interface PlaybackControls {
   setVolume: (volume: number) => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  reorderQueue: (newQueue: Track[]) => void;
 }
 
 export interface ChatMessage {

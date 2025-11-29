@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Track, PlaybackState, PlaybackControls } from '../types';
 
@@ -13,7 +14,13 @@ export const useAudio = (initialTracks: Track[]) => {
     volume: 1,
     isShuffle: false,
     isRepeat: false,
+    queue: initialTracks,
   });
+
+  // Sync trackList to state.queue whenever it changes
+  useEffect(() => {
+    setState(prev => ({ ...prev, queue: trackList }));
+  }, [trackList]);
 
   // Initialize audio object once
   useEffect(() => {
@@ -33,7 +40,7 @@ export const useAudio = (initialTracks: Track[]) => {
     };
 
     const handleEnded = () => {
-      // Auto-play next track logic could go here
+      // Auto-play next track logic
       next(); 
     };
 
@@ -97,32 +104,41 @@ export const useAudio = (initialTracks: Track[]) => {
   }, []);
 
   const next = useCallback(() => {
-    if (!state.currentTrack || trackList.length === 0) return;
+    // Note: trackList closure might be stale if not careful, but play uses updated one via dependency?
+    // Actually, we need to access the *current* trackList.
+    // Since 'next' is recreated when 'trackList' changes, this is fine.
+    
+    // We also need the latest state.currentTrack
+    // Using a ref for currentTrack might be safer if we had many updates, but dependency array handles it.
+    const currentList = trackList; 
+    
+    if (!state.currentTrack || currentList.length === 0) return;
     
     let nextIndex: number;
-    const currentIndex = trackList.findIndex(t => t.id === state.currentTrack?.id);
+    const currentIndex = currentList.findIndex(t => t.id === state.currentTrack?.id);
 
     if (state.isShuffle) {
-      nextIndex = Math.floor(Math.random() * trackList.length);
+      nextIndex = Math.floor(Math.random() * currentList.length);
     } else {
-      nextIndex = (currentIndex + 1) % trackList.length;
+      nextIndex = (currentIndex + 1) % currentList.length;
     }
     
-    play(trackList[nextIndex]);
+    play(currentList[nextIndex]);
   }, [state.currentTrack, state.isShuffle, trackList, play]);
 
   const prev = useCallback(() => {
-    if (!state.currentTrack || trackList.length === 0) return;
+    const currentList = trackList;
+    if (!state.currentTrack || currentList.length === 0) return;
     
-    const currentIndex = trackList.findIndex(t => t.id === state.currentTrack?.id);
-    // If we are more than 3 seconds in, just restart current song
+    const currentIndex = currentList.findIndex(t => t.id === state.currentTrack?.id);
+    
     if (state.currentTime > 3) {
       seek(0);
       return;
     }
 
-    let prevIndex = (currentIndex - 1 + trackList.length) % trackList.length;
-    play(trackList[prevIndex]);
+    let prevIndex = (currentIndex - 1 + currentList.length) % currentList.length;
+    play(currentList[prevIndex]);
   }, [state.currentTrack, state.currentTime, trackList, play, seek]);
 
   const toggleShuffle = useCallback(() => {
@@ -131,11 +147,24 @@ export const useAudio = (initialTracks: Track[]) => {
 
   const toggleRepeat = useCallback(() => {
     setState(prev => ({ ...prev, isRepeat: !prev.isRepeat }));
-    // Note: implementation of repeat-one logic would handle 'ended' event differently
+  }, []);
+
+  const reorderQueue = useCallback((newQueue: Track[]) => {
+    setTrackList(newQueue);
   }, []);
 
   return {
     state,
-    controls: { play, pause, next, prev, seek, setVolume, toggleShuffle, toggleRepeat }
+    controls: { 
+      play, 
+      pause, 
+      next, 
+      prev, 
+      seek, 
+      setVolume, 
+      toggleShuffle, 
+      toggleRepeat,
+      reorderQueue
+    }
   };
 };
