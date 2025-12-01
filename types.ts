@@ -1,5 +1,3 @@
-
-
 export interface Track {
   id: string;
   title: string;
@@ -9,6 +7,7 @@ export interface Track {
   duration: number; // in seconds
   genre?: string;
   lyrics?: string;
+  downloaded?: boolean;
 }
 
 export type ViewState = 'library' | 'player' | 'ai-dj';

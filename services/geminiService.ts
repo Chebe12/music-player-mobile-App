@@ -2,27 +2,26 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Track } from "../types";
 import { SAMPLE_TRACKS } from "../constants";
 
-// Initialize lazily to avoid issues if env is not ready at module load
-const getAIClient = () => {
-  // Ensure we have a fallback or the actual key
-  const apiKey = process.env.API_KEY || '';
-  return new GoogleGenAI({ apiKey });
-};
-
 export const getAIPlaylistRecommendation = async (userMood: string): Promise<{ text: string; tracks: Track[] }> => {
   try {
-    const ai = getAIClient();
-    const availableTracksList = SAMPLE_TRACKS.map(t => `${t.title} by ${t.artist} (ID: ${t.id}, Genre: ${t.genre})`).join('\n');
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      console.warn("No API Key found for Gemini");
+      throw new Error("API Key Missing");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const availableTracksList = SAMPLE_TRACKS.map(t => `ID: ${t.id}, Title: ${t.title}, Artist: ${t.artist}, Genre: ${t.genre}`).join('\n');
 
     const prompt = `
       You are an expert music DJ. The user is in this mood: "${userMood}".
       
-      Here is the list of available tracks in the library:
+      Here is the list of available tracks:
       ${availableTracksList}
 
-      1. Select 2-3 tracks from the available list that best match the mood.
-      2. Write a short, engaging description of why these tracks fit the vibe.
-      3. Return the response in JSON format containing the description and the list of selected Track IDs.
+      1. Select 2-3 tracks from the list that fit the mood.
+      2. Write a short, fun description (max 2 sentences) of why these fit.
+      3. Return ONLY valid JSON.
     `;
 
     const response = await ai.models.generateContent({
@@ -45,20 +44,21 @@ export const getAIPlaylistRecommendation = async (userMood: string): Promise<{ t
     });
 
     const jsonText = response.text;
-    if (!jsonText) throw new Error("No response from AI");
+    if (!jsonText) throw new Error("Empty response from AI");
 
     const data = JSON.parse(jsonText);
-    const recommendedTracks = SAMPLE_TRACKS.filter(t => data.recommendedTrackIds.includes(t.id));
+    const recommendedTracks = SAMPLE_TRACKS.filter(t => data.recommendedTrackIds?.includes(t.id));
 
     return {
-      text: data.description,
+      text: data.description || "Here's a mix for you!",
       tracks: recommendedTracks
     };
 
   } catch (error) {
     console.error("Gemini API Error:", error);
+    // Fallback logic
     return {
-      text: "I couldn't quite catch that vibe. Here's a random mix instead!",
+      text: "I'm having trouble connecting to the vibe cloud right now. Here are some random picks!",
       tracks: [SAMPLE_TRACKS[0], SAMPLE_TRACKS[1]]
     };
   }
