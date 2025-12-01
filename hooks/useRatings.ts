@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useRatings = () => {
   const [ratings, setRatingsState] = useState<Record<string, number>>({});
@@ -15,20 +15,17 @@ export const useRatings = () => {
     }
   }, []);
 
-  const setRating = (trackId: string, rating: number) => {
+  const setRating = useCallback((trackId: string, rating: number) => {
     setRatingsState(prev => {
       const newRatings = { ...prev, [trackId]: rating };
-      // Schedule side effect after render
-      setTimeout(() => {
-        try {
-          localStorage.setItem('track_ratings', JSON.stringify(newRatings));
-        } catch (e) {
-          console.error("Failed to save rating", e);
-        }
-      }, 0);
+      try {
+        localStorage.setItem('track_ratings', JSON.stringify(newRatings));
+      } catch (e) {
+        console.error("Failed to save rating", e);
+      }
       return newRatings;
     });
-  };
+  }, []);
 
   return { ratings, setRating };
 };
