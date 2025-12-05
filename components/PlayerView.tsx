@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { PlaybackState, PlaybackControls, Track } from '../types';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, ChevronDown, Volume2, ListMusic, ArrowUp, ArrowDown, Mic2, Star } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, ChevronDown, Volume2, ListMusic, ArrowUp, ArrowDown, Mic2, Star, Trash2 } from 'lucide-react';
 import { useRatings } from '../hooks/useRatings';
 
 interface PlayerViewProps {
@@ -39,6 +40,14 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
     controls.reorderQueue(newQueue);
   };
 
+  const handleRemove = (index: number) => {
+    const newQueue = [...queue];
+    newQueue.splice(index, 1);
+    controls.reorderQueue(newQueue);
+    
+    // If queue becomes empty, we could optionally handle it, but standard behavior is fine.
+  };
+
   const toggleView = (view: PlayerViewMode) => {
     if (activeView === view) {
       setActiveView('art');
@@ -74,7 +83,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
           <ChevronDown size={28} />
         </button>
         
-        <span className="text-xs font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400">
+        <span className="text-xs font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">
           {getViewTitle()}
         </span>
 
@@ -89,70 +98,90 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
           // QUEUE VIEW
           <div className="flex-1 overflow-y-auto px-6 pb-4">
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm py-2 z-20">
-               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Next Up</h3>
-               <button 
-                 onClick={() => setIsEditingQueue(!isEditingQueue)}
-                 className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider hover:text-indigo-600 dark:hover:text-indigo-300"
-               >
-                 {isEditingQueue ? 'Done' : 'Edit'}
-               </button>
+               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                 Next Up ({queue.length})
+               </h3>
+               {queue.length > 0 && (
+                 <button 
+                   onClick={() => setIsEditingQueue(!isEditingQueue)}
+                   className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider hover:text-indigo-700 dark:hover:text-indigo-300"
+                 >
+                   {isEditingQueue ? 'Done' : 'Edit'}
+                 </button>
+               )}
             </div>
             
-            <div className="space-y-2">
-              {queue.map((track, index) => {
-                const isCurrent = track.id === currentTrack.id;
-                return (
-                  <div 
-                    key={`${track.id}-${index}`}
-                    className={`flex items-center p-3 rounded-xl transition-colors group
-                      ${isCurrent ? 'bg-indigo-100 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                  >
-                    {/* Playing Indicator or Number */}
-                    <div className="w-8 flex-shrink-0 text-center text-sm font-medium text-gray-400">
-                      {isCurrent && isPlaying ? (
-                        <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse mx-auto" />
+            {queue.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                <ListMusic size={48} className="mb-2 opacity-20" />
+                <p>Queue is empty</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {queue.map((track, index) => {
+                  const isCurrent = track.id === currentTrack.id;
+                  return (
+                    <div 
+                      key={`${track.id}-${index}`}
+                      className={`flex items-center p-3 rounded-xl transition-colors group
+                        ${isCurrent ? 'bg-indigo-100 dark:bg-white/10' : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                    >
+                      {/* Playing Indicator or Number */}
+                      <div className="w-8 flex-shrink-0 text-center text-sm font-medium text-slate-400 dark:text-slate-500">
+                        {isCurrent && isPlaying ? (
+                          <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse mx-auto" />
+                        ) : (
+                          <span className="opacity-70">{index + 1}</span>
+                        )}
+                      </div>
+
+                      <div 
+                        className="flex-1 min-w-0 mx-3 cursor-pointer"
+                        onClick={() => !isEditingQueue && controls.play(track)}
+                      >
+                        <div className={`font-medium truncate ${isCurrent ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-100'}`}>
+                          {track.title}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{track.artist}</div>
+                      </div>
+
+                      {/* Manage Controls */}
+                      {isEditingQueue ? (
+                        <div className="flex items-center space-x-2">
+                           <div className="flex flex-col space-y-1">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleReorder(index, 'up'); }}
+                              disabled={index === 0}
+                              className="p-1 hover:text-indigo-500 disabled:opacity-20 text-slate-400"
+                            >
+                              <ArrowUp size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleReorder(index, 'down'); }}
+                              disabled={index === queue.length - 1}
+                              className="p-1 hover:text-indigo-500 disabled:opacity-20 text-slate-400"
+                            >
+                              <ArrowDown size={16} />
+                            </button>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemove(index); }}
+                            className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                            title="Remove from queue"
+                          >
+                             <Trash2 size={18} />
+                          </button>
+                        </div>
                       ) : (
-                        <span className="opacity-50">{index + 1}</span>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                        </div>
                       )}
                     </div>
-
-                    <div 
-                      className="flex-1 min-w-0 mx-3 cursor-pointer"
-                      onClick={() => !isEditingQueue && controls.play(track)}
-                    >
-                      <div className={`font-medium truncate ${isCurrent ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-white'}`}>
-                        {track.title}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">{track.artist}</div>
-                    </div>
-
-                    {/* Reorder Controls */}
-                    {isEditingQueue ? (
-                      <div className="flex flex-col space-y-1">
-                        <button 
-                          onClick={() => handleReorder(index, 'up')}
-                          disabled={index === 0}
-                          className="p-1 hover:text-indigo-500 disabled:opacity-20 text-gray-400"
-                        >
-                          <ArrowUp size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleReorder(index, 'down')}
-                          disabled={index === queue.length - 1}
-                          className="p-1 hover:text-indigo-500 disabled:opacity-20 text-gray-400"
-                        >
-                          <ArrowDown size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-500">
-                        {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -162,14 +191,14 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
             {currentTrack.lyrics ? (
                <div className="flex flex-col space-y-6 pt-4">
                  {currentTrack.lyrics.split('\n\n').map((stanza, i) => (
-                   <p key={i} className="text-2xl font-bold leading-relaxed text-slate-700 dark:text-gray-200 whitespace-pre-line opacity-90">
+                   <p key={i} className="text-2xl font-bold leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-line opacity-90">
                      {stanza}
                    </p>
                  ))}
                  <div className="h-12" /> {/* Spacer at bottom */}
                </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full opacity-40 text-gray-500 dark:text-gray-300">
+              <div className="flex flex-col items-center justify-center h-full opacity-60 text-slate-500 dark:text-slate-400">
                 <Mic2 size={48} className="mb-4" />
                 <p className="text-lg font-medium">No lyrics available</p>
                 <p className="text-sm mt-2">Instrumental or missing data</p>
@@ -199,7 +228,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
           <div className="flex justify-between items-end">
              <div className="flex-1 mr-4">
                 <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-tight line-clamp-1">{currentTrack.title}</h2>
-                <p className="text-lg text-slate-600 dark:text-gray-300 font-medium line-clamp-1">{currentTrack.artist}</p>
+                <p className="text-lg text-slate-700 dark:text-slate-300 font-medium line-clamp-1">{currentTrack.artist}</p>
              </div>
              <div className="flex space-x-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -210,7 +239,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
                   >
                     <Star 
                       size={20} 
-                      className={`${star <= currentRating ? 'fill-yellow-500 text-yellow-500' : 'text-slate-400 dark:text-gray-600'}`} 
+                      className={`${star <= currentRating ? 'fill-yellow-500 text-yellow-500' : 'text-slate-300 dark:text-slate-600'}`} 
                     />
                   </button>
                 ))}
@@ -228,7 +257,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
             onChange={(e) => controls.seek(Number(e.target.value))}
             className="w-full h-1.5 bg-slate-300 dark:bg-white/20 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:h-2 transition-all"
           />
-          <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-gray-400 mt-2">
+          <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mt-2">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -238,12 +267,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
         <div className="flex items-center justify-between mb-8 px-2">
           <button 
             onClick={controls.toggleShuffle}
-            className={`p-2 rounded-full transition-colors ${isShuffle ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'}`}
+            className={`p-2 rounded-full transition-colors ${isShuffle ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
           >
             <Shuffle size={20} />
           </button>
           
-          <button onClick={controls.prev} className="p-2 text-slate-800 dark:text-white hover:text-indigo-500 dark:hover:text-gray-300 transition-transform active:scale-90">
+          <button onClick={controls.prev} className="p-2 text-slate-800 dark:text-white hover:text-indigo-600 dark:hover:text-slate-300 transition-transform active:scale-90">
             <SkipBack size={32} fill="currentColor" />
           </button>
           
@@ -258,13 +287,13 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
             )}
           </button>
           
-          <button onClick={controls.next} className="p-2 text-slate-800 dark:text-white hover:text-indigo-500 dark:hover:text-gray-300 transition-transform active:scale-90">
+          <button onClick={controls.next} className="p-2 text-slate-800 dark:text-white hover:text-indigo-600 dark:hover:text-slate-300 transition-transform active:scale-90">
             <SkipForward size={32} fill="currentColor" />
           </button>
           
           <button 
             onClick={controls.toggleRepeat}
-            className={`p-2 rounded-full transition-colors ${isRepeat ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white'}`}
+            className={`p-2 rounded-full transition-colors ${isRepeat ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
           >
             <Repeat size={20} />
           </button>
@@ -273,8 +302,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
         {/* Bottom Tools Row: Volume | Lyrics | Queue */}
         <div className="flex items-center justify-between gap-4 px-2">
             {/* Volume */}
-            <div className="flex items-center flex-1 gap-3 bg-black/5 dark:bg-white/5 rounded-full px-4 py-2">
-                <Volume2 size={18} className="text-slate-400 dark:text-gray-400 flex-shrink-0"/>
+            <div className="flex items-center flex-1 gap-3 bg-slate-200 dark:bg-white/5 rounded-full px-4 py-2">
+                <Volume2 size={18} className="text-slate-500 dark:text-slate-400 flex-shrink-0"/>
                 <input 
                   type="range" 
                   min="0" 
@@ -282,7 +311,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
                   step="0.01"
                   value={playbackState.volume}
                   onChange={(e) => controls.setVolume(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-slate-300 dark:bg-white/20 rounded-full accent-slate-800 dark:accent-white"
+                  className="w-full h-1 bg-slate-400 dark:bg-white/20 rounded-full accent-slate-800 dark:accent-white"
                 />
             </div>
 
@@ -290,14 +319,14 @@ export const PlayerView: React.FC<PlayerViewProps> = ({ playbackState, controls,
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => toggleView('lyrics')} 
-                className={`p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${activeView === 'lyrics' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-gray-400'}`}
+                className={`p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${activeView === 'lyrics' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-slate-500'}`}
                 title="Lyrics"
               >
                 <Mic2 size={20} />
               </button>
               <button 
                 onClick={() => toggleView('queue')} 
-                className={`p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${activeView === 'queue' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-gray-400'}`}
+                className={`p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${activeView === 'queue' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-slate-400 dark:text-slate-500'}`}
                 title="Queue"
               >
                 <ListMusic size={20} />

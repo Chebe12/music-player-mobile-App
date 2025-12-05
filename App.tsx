@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAudio } from './hooks/useAudio';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
@@ -33,7 +34,7 @@ const NavButton: React.FC<NavButtonProps> = ({
     className={`flex flex-col items-center justify-center space-y-1 w-full h-full transition-colors duration-200 ${
       currentView === targetView && !isPlayerOpen 
         ? 'text-indigo-600 dark:text-indigo-400' 
-        : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
     }`}
   >
     <Icon size={24} strokeWidth={currentView === targetView && !isPlayerOpen ? 2.5 : 2} />
@@ -42,7 +43,8 @@ const NavButton: React.FC<NavButtonProps> = ({
 );
 
 export default function App() {
-  const { state, controls } = useAudio(SAMPLE_TRACKS);
+  const [libraryTracks, setLibraryTracks] = useState<Track[]>(SAMPLE_TRACKS);
+  const { state, controls } = useAudio(libraryTracks);
   const [view, setView] = useState<ViewState>('library');
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const isOnline = useNetworkStatus();
@@ -50,6 +52,27 @@ export default function App() {
 
   const handlePlayTrack = (track: Track) => {
     controls.play(track);
+  };
+
+  const handleImportMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newTracks: Track[] = Array.from(e.target.files).map((file: File) => ({
+        id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
+        artist: 'Local Track',
+        coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop', // Generic placeholder
+        audioUrl: URL.createObjectURL(file),
+        duration: 0, // Duration will be determined by the audio element upon load
+        downloaded: true,
+        genre: 'Local'
+      }));
+
+      // Update Library
+      setLibraryTracks(prev => [...prev, ...newTracks]);
+      
+      // Update Player Queue (Append to current queue)
+      controls.reorderQueue([...state.queue, ...newTracks]);
+    }
   };
 
   return (
@@ -78,10 +101,11 @@ export default function App() {
       <main className={`absolute inset-0 pb-20 ${!isOnline ? 'pt-6' : ''}`}>
         {view === 'library' && (
           <LibraryView 
-            tracks={SAMPLE_TRACKS}
+            tracks={libraryTracks}
             currentTrack={state.currentTrack}
             isPlaying={state.isPlaying}
             onPlay={handlePlayTrack}
+            onImportMusic={handleImportMusic}
           />
         )}
         {view === 'ai-dj' && (
@@ -130,7 +154,7 @@ export default function App() {
            className={`flex flex-col items-center justify-center space-y-1 w-full h-full transition-colors duration-200 ${
              isPlayerOpen 
                ? 'text-indigo-600 dark:text-indigo-400' 
-               : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+               : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
            }`}
         >
           <Disc size={24} className={state.isPlaying ? 'animate-spin-slow' : ''} />

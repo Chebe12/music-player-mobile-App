@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Track, ChatMessage } from '../types';
 import { getAIPlaylistRecommendation } from '../services/geminiService';
@@ -75,13 +76,13 @@ export const AIDJView: React.FC<AIDJViewProps> = ({ onPlayTrack }) => {
             <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${
               msg.role === 'user' 
                 ? 'bg-indigo-600 text-white rounded-br-none' 
-                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-200 rounded-bl-none border border-slate-200 dark:border-transparent'
+                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-none border border-slate-200 dark:border-transparent'
             }`}>
               <p className="leading-relaxed whitespace-pre-line">{msg.text}</p>
               
               {msg.recommendedTracks && msg.recommendedTracks.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-xs font-bold text-slate-400 dark:text-gray-400 uppercase tracking-wider mb-2">Recommended</p>
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Recommended</p>
                   {msg.recommendedTracks.map(track => (
                     <button
                       key={track.id}
@@ -91,7 +92,7 @@ export const AIDJView: React.FC<AIDJViewProps> = ({ onPlayTrack }) => {
                       <img src={track.coverUrl} className="w-10 h-10 rounded object-cover" alt="" />
                       <div className="ml-3 flex-1 min-w-0">
                         <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{track.title}</div>
-                        <div className="text-xs text-slate-500 dark:text-gray-400 truncate">{track.artist}</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{track.artist}</div>
                       </div>
                       <div className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">
                          <Play size={14} fill="white" className="text-white" />
@@ -106,9 +107,9 @@ export const AIDJView: React.FC<AIDJViewProps> = ({ onPlayTrack }) => {
         {isTyping && (
           <div className="flex justify-start">
              <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-bl-none p-4 flex space-x-1 items-center h-12 shadow-sm border border-slate-200 dark:border-transparent">
-               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
              </div>
           </div>
         )}
@@ -123,7 +124,7 @@ export const AIDJView: React.FC<AIDJViewProps> = ({ onPlayTrack }) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask for a vibe (e.g., 'Late night drive')..."
-              className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-full py-3.5 pl-4 pr-12 border border-slate-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow shadow-sm"
+              className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-full py-3.5 pl-4 pr-12 border border-slate-200 dark:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow shadow-sm"
             />
             <button 
               onClick={handleSend}

@@ -11,6 +11,18 @@
     <script>
       // Polyfill process.env for browser environments to prevent ReferenceErrors
       window.process = window.process || { env: { API_KEY: '' } };
+      
+      // Register Service Worker for PWA support with error handling
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Use relative path ./ to ensure it works in nested paths/previewers
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker registered', reg))
+            .catch(err => {
+              console.warn('Service Worker registration failed (this is expected in some preview environments):', err);
+            });
+        });
+      }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

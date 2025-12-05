@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PlaybackState, PlaybackControls } from '../types';
 import { Play, Pause, SkipForward } from 'lucide-react';
@@ -37,7 +38,7 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({ playbackState, controls,
         {/* Info */}
         <div className="ml-3 flex-1 min-w-0 flex flex-col justify-center">
           <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">{currentTrack.title}</h4>
-          <p className="text-xs text-indigo-600 dark:text-indigo-300 truncate leading-tight">{currentTrack.artist}</p>
+          <p className="text-xs text-indigo-700 dark:text-indigo-300 truncate leading-tight">{currentTrack.artist}</p>
         </div>
 
         {/* Controls */}
